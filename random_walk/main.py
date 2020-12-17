@@ -27,11 +27,16 @@ def animate_loop(i):
 
 robots = [robot(160 + i*25, init_spacing) for i in range(num_bots)]
 
+# Initialize obstacles
 obstacles = [] 
 obs_dims = [(100,100),(100,400),(250,250),(400,100),(400,400)] 
-[obstacles.append(patches.Rectangle(dims,obs_width,obs_len,facecolor='r')) for dims in dims]
+[obstacles.append(patches.Rectangle(dims,obs_width,obs_len,facecolor='r')) for dims in obs_dims]
 obs_dims = [(r._x0, r._y0, r._x0 +r._width, r._y0 + r._height) for r in obstacles]
  
+# Initialize world
+occ_grid = np.zeros((world_y,world_x))
+h_grid = np.zeros_like(occ_grid) # heuristic grid (dist to closest obstacle/wall)
+
 # create animation
 fig = plt.figure()
 ax = fig.add_subplot(1, 1, 1)
