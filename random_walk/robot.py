@@ -13,17 +13,18 @@ class robot:
     #
 
     def __init__(self, x_init = 0, y_init = 0, heading_init = 0, measurement_range = 30.0,
-                 motion_noise = 1.0, measurement_noise = 1.0, landmarks = [], step_len = 1.0):
+                 motion_noise = 1.0, measurement_noise = 1.0, step_len = 1.0,
+                 landmarks = [], obstacles = []):
         self.x = x_init
         self.y = y_init
         self.measurement_range = measurement_range
         self.heading = heading_init
         self.motion_noise = motion_noise
         self.measurement_noise = measurement_noise
-        self.landmarks = landmarks
-        self.num_landmarks = 0
         self.step_len = step_len
         self.steps_remaining = 0
+        self.landmarks = landmarks
+        self.obstacles = obstacles
 
     def rand(self):
         return float(random.random() * 2.0 - 1.0)
@@ -58,7 +59,7 @@ class robot:
 
     def sense_landmarks(self):
         Z = []
-        for i in range(self.num_landmarks):
+        for i in range(len(self.landmarks)):
             dx = self.landmarks[i][0] - self.x + self.rand() * self.measurement_noise
             dy = self.landmarks[i][1] - self.y + self.rand() * self.measurement_noise    
             if self.measurement_range < 0.0 or abs(dx) + abs(dy) <= self.measurement_range:
@@ -72,7 +73,7 @@ class robot:
     #
 
     def __repr__(self):
-        return 'Robot: [x=%.5f y=%.5f heading=%.5f steps=%s]'  % \
+        return 'Robot: [x=%.5f y=%.5f heading=%.5f steps_left=%s]'  % \
             (self.x, self.y, self.heading, self.steps_remaining)
 
     def update(self):
