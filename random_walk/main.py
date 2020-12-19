@@ -7,10 +7,10 @@ from robot import robot
 from random import random
 import shutil
 
-num_frames = 10000 # iterations to run for for non-video option
+num_frames = 100000 # iterations to run for for non-video option
 video = False # animate process
 save = True # Save occ_grid every i frames
-record_at = 1000 # record occ_grid at every i frame
+record_at = 10000 # record occ_grid at every i frame
 
 num_bots = 10 # number of robots
 s_range = 20 # range of wall detection
@@ -21,6 +21,12 @@ obs_width = 50
 world_x = 550 # occupancy grid
 world_y = 600
 border_t = 2*s_range
+
+print("\nLoading with settings:")
+print(f"world size:     {world_x} x {world_y}")
+print(f"num iterations: {num_frames}")
+print(f"num robots:     {num_bots}")
+print(f"sensor range:   {s_range}\n")
 
 if(save):
     dir_name = 'data'
@@ -33,8 +39,10 @@ def logic_loop(i):
         bot.update()
     if i % record_at == 0 and save:
         # TODO: Refactor the abs, shouldnt need it
-        np.savetxt(r'data/0_occ_grid_' + str(abs(i)) + '.csv', occ_grid[0], delimiter=',')
-        np.savetxt(r'data/1_occ_grid_' + str(abs(i)) + '.csv', occ_grid[1], delimiter=',')
+        np.savetxt(r'data/0_occ_grid_' + str(num_frames - i) + '.csv', occ_grid[0], delimiter=',')
+        np.savetxt(r'data/1_occ_grid_' + str(num_frames - i) + '.csv', occ_grid[1], delimiter=',')
+    if i % int(num_frames/100) == 0:
+        print(f'progress: {num_frames - i}/{num_frames}', end="\r")
 
 def animate_loop(i):
     ax.clear()
@@ -72,6 +80,7 @@ for r in obs_dims:
 # Initialize robots
 robots = [robot(150 + border_t + random()*250, 50 + border_t, world=h_grid, occ_grid=occ_grid) for i in range(num_bots)]
 
+print("Starting simulation")
 if(video):
     # create animation
     fig = plt.figure()
@@ -81,14 +90,16 @@ if(video):
     # start animation
     plt.show()
 else:
-    while(num_frames > 0):
-        logic_loop(1000-num_frames)
-        num_frames -= 1
+    i = num_frames
+    while(i > 0):
+        logic_loop(i)
+        i -= 1
+    print("\n\nloading occupancy grid")
 
-    # Plot occupancy grid
-    occ_grid = occ_grid[1] - occ_grid[0]
-    occ_grid[occ_grid > 0] = 1
-    occ_grid[occ_grid < 0] = 0
-    plt.figure(figsize=(6,6))
-    plt.pcolor(occ_grid[::-1])
-    plt.show()
+# Plot occupancy grid
+occ_grid = occ_grid[1] - occ_grid[0]
+occ_grid[occ_grid > 0] = 1
+occ_grid[occ_grid < 0] = 0
+plt.figure(figsize=(6,6))
+plt.pcolor(occ_grid[::-1])
+plt.show()
