@@ -2,19 +2,39 @@ from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
+import os
 from robot import robot
 from random import random
+import shutil
+
+num_frames = 10000 # iterations to run for for non-video option
+video = False # animate process
+save = True # Save occ_grid every i frames
+record_at = 1000 # record occ_grid at every i frame
 
 num_bots = 10 # number of robots
-s_range = 10 # range of wall detection
+s_range = 20 # range of wall detection
 
 obs_len = 100 # obstacle dimensions
 obs_width = 50
 
-world_x = 550 # occupancy grid with 1 mm resolution
+world_x = 550 # occupancy grid
 world_y = 600
-
 border_t = 2*s_range
+
+if(save):
+    dir_name = 'data'
+    if os.path.exists(dir_name):
+        shutil.rmtree(dir_name)
+    os.makedirs(dir_name)
+
+def logic_loop(i):
+    for bot in robots:
+        bot.update()
+    if i % record_at == 0 and save:
+        # TODO: Refactor the abs, shouldnt need it
+        np.savetxt(r'data/0_occ_grid_' + str(abs(i)) + '.csv', occ_grid[0], delimiter=',')
+        np.savetxt(r'data/1_occ_grid_' + str(abs(i)) + '.csv', occ_grid[1], delimiter=',')
 
 def animate_loop(i):
     ax.clear()
@@ -27,7 +47,11 @@ def animate_loop(i):
     y_bots = [bot.y for bot in robots]
 
     ax.plot(x_bots, y_bots, 'bo')
-    [ax.add_patch(rect) for rect in obstacles] 
+    [ax.add_patch(rect) for rect in obstacles]
+
+    if i % record_at == 0 and save:
+        np.savetxt(r'data/0_occ_grid_' + str(i) + '.csv', occ_grid[0], delimiter=',')
+        np.savetxt(r'data/1_occ_grid_' + str(i) + '.csv', occ_grid[1], delimiter=',')   
 
 # Initialize obstacles
 obstacles = [] 
@@ -48,11 +72,23 @@ for r in obs_dims:
 # Initialize robots
 robots = [robot(150 + border_t + random()*250, 50 + border_t, world=h_grid, occ_grid=occ_grid) for i in range(num_bots)]
 
-# create animation
-fig = plt.figure()
-ax = fig.add_subplot(1, 1, 1)
-animation = FuncAnimation(fig, func=animate_loop, interval=10)
+if(video):
+    # create animation
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    animation = FuncAnimation(fig, func=animate_loop, interval=10)
 
-# start animation
-plt.show()
+    # start animation
+    plt.show()
+else:
+    while(num_frames > 0):
+        logic_loop(1000-num_frames)
+        num_frames -= 1
 
+    # Plot occupancy grid
+    occ_grid = occ_grid[1] - occ_grid[0]
+    occ_grid[occ_grid > 0] = 1
+    occ_grid[occ_grid < 0] = 0
+    plt.figure(figsize=(6,6))
+    plt.pcolor(occ_grid[::-1])
+    plt.show()
