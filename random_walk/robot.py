@@ -19,6 +19,8 @@ class robot:
                  landmarks = [], world = np.asarray([]), occ_grid = np.asarray([])):
         self.x = x_init
         self.y = y_init
+        self.x_dead = self.x
+        self.y_dead = self.y
         self.sense_range = sense_range
         self.heading = heading_init
         self.motion_noise = motion_noise
@@ -37,14 +39,17 @@ class robot:
     #
 
     def step(self):
-        x = self.x + self.step_len*cos(self.heading) + self.rand() * self.motion_noise
-        y = self.y + self.step_len*sin(self.heading) + self.rand() * self.motion_noise
-
+        dx = self.step_len*cos(self.heading)
+        dy = self.step_len*sin(self.heading)
+        x = self.x + dx + self.rand() * self.motion_noise
+        y = self.y + dy + self.rand() * self.motion_noise
         if(0): # think of move fail conditions later
             return False
         else:
             self.x = x
             self.y = y
+            self.x_dead = self.x + dx
+            self.y_dead = self.y + dy
             return True
     
     def turn(self, angle):
@@ -88,6 +93,14 @@ class robot:
         landmarks = self.sense_landmarks()
         collided, prox = self.sense_proximity()
 
+        # Record
+        x_lower = round(self.x) - self.sense_range
+        x_higher = round(self.x) + self.sense_range + 1
+        y_lower = round(self.y) - self.sense_range
+        y_higher = round(self.y) + self.sense_range + 1
+        self.occ_grid[1][x_lower:x_higher,y_lower:y_higher] += prox.astype(int)
+        self.occ_grid[0][x_lower:x_higher,y_lower:y_higher] += np.logical_not(prox).astype(int)
+
         # Move
         if(collided):
             self.turn(pi) # turn 180 degrees
@@ -103,13 +116,4 @@ class robot:
             self.step()
             self.steps_remaining -= 1
             return True
-        
-        # Record
-        x_lower = round(self.x) - self.sense_range
-        x_higher = round(self.x) + self.sense_range + 1
-        y_lower = round(self.y) - self.sense_range
-        y_higher = round(self.y) + self.sense_range + 1
-        self.occ_grid[1][x_lower:x_higher,y_lower:y_higher] += prox.astype(int)
-        self.occ_grid[0][x_lower:x_higher,y_lower:y_higher] += np.logical_not(prox).astype(int)
-
         
