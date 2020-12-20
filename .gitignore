@@ -1,6 +1,7 @@
-.vscode/settings.json
+.vscode/*
 experiment_files/
 Notes.txt
 random_walk/__pycache__/
 *.out
 *.in
+*.csv
