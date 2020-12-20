@@ -7,20 +7,21 @@ from robot import robot
 from random import random
 import shutil
 
-num_frames = 100000 # iterations to run for for non-video option
-video = False # animate process
-save = True # Save occ_grid every i frames
-record_at = 10000 # record occ_grid at every i frame
+num_frames = 10000 # iterations to run for for non-video option
+video      = False # animate process
+save       = False # Save occ_grid every i frames
+record_at  = 1000 # record occ_grid at every i frame
+plot_occ   = True # Plot aggregated occupancy grid
 
-num_bots = 10 # number of robots
-s_range = 20 # range of wall detection
+num_bots   = 10 # number of robots
+s_range    = 20 # range of wall detection
 
-obs_len = 100 # obstacle dimensions
-obs_width = 50
+obs_len    = 100 # obstacle dimensions
+obs_width  = 50
 
-world_x = 550 # occupancy grid
-world_y = 600
-border_t = 2*s_range
+world_x    = 550 # occupancy grid
+world_y    = 600
+border_t   = 2*s_range
 
 print("\nLoading with settings:")
 print(f"world size:     {world_x} x {world_y}")
@@ -51,10 +52,14 @@ def animate_loop(i):
     
     for bot in robots:
         bot.update()
-    x_bots = [bot.x for bot in robots]
-    y_bots = [bot.y for bot in robots]
-
-    ax.plot(x_bots, y_bots, 'bo')
+    x_bots = [bot.x_real for bot in robots]
+    y_bots = [bot.y_real for bot in robots]
+    ax.plot(x_bots, y_bots, 'go')
+    """
+    x_bots_dead = [bot.x_sense for bot in robots]
+    y_bots_dead = [bot.y_sense for bot in robots]
+    ax.plot(x_bots_dead, y_bots_dead, 'ro')
+    """
     [ax.add_patch(rect) for rect in obstacles]
 
     if i % record_at == 0 and save:
@@ -66,7 +71,7 @@ obstacles = []
 obs_dims = [(100,100),(100,400),(250,250),(400,100),(400,400)]
 
 obs_dims = [(dims[0] + border_t, dims[1] + border_t) for dims in obs_dims]
-[obstacles.append(patches.Rectangle(dims,obs_width,obs_len,facecolor='r')) for dims in obs_dims]
+[obstacles.append(patches.Rectangle(dims,obs_width,obs_len,facecolor='black')) for dims in obs_dims]
 obs_dims = [(r._x0, r._y0, r._x0 +r._width, r._y0 + r._height) for r in obstacles]
  
 # Initialize world
@@ -85,7 +90,7 @@ if(video):
     # create animation
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
-    animation = FuncAnimation(fig, func=animate_loop, interval=10)
+    animation = FuncAnimation(fig, func=animate_loop, interval=100)
 
     # start animation
     plt.show()
@@ -97,9 +102,10 @@ else:
     print("\n\nloading occupancy grid")
 
 # Plot occupancy grid
-occ_grid = occ_grid[1] - occ_grid[0]
-occ_grid[occ_grid > 0] = 1
-occ_grid[occ_grid < 0] = 0
-plt.figure(figsize=(6,6))
-plt.pcolor(occ_grid[::-1])
-plt.show()
+if(plot_occ):
+    occ_grid = occ_grid[1] - occ_grid[0]
+    occ_grid[occ_grid > 0] = 1
+    occ_grid[occ_grid < 0] = 0
+    plt.figure(figsize=(6,6))
+    plt.pcolor(occ_grid[::-1])
+    plt.show()
