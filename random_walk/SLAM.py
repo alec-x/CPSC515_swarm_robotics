@@ -35,15 +35,15 @@ import random
 
 def print_result(N, num_landmarks, result):
     print
-    print('Estimated Pose(s):')
-    for i in range(N):
-        print('    ['+ ', '.join('%.3f'%x for x in result[2*i]) + ', ' \
-            + ', '.join('%.3f'%x for x in result[2*i+1]) +']')
+    print('Estimated Pose')
+    print(result[2*(N-1)], result[2*N-1])
     print()
     print('Estimated Landmarks:')
     for i in range(num_landmarks):
         print('    ['+ ', '.join('%.3f'%x for x in result[2*(N+i)]) + ', ' \
             + ', '.join('%.3f'%x for x in result[2*(N+i)+1]) +']')
+    print()
+    
 
 # --------------------------------
 #
@@ -53,9 +53,8 @@ def print_result(N, num_landmarks, result):
 ############## ENTER YOUR CODE BELOW HERE ###################
 import numpy as np
 
-def slam(data, num_landmarks, motion_noise, measurement_noise):
-    # First point of data used as start point, otherwise N = len(data) + 1
-    N = len(data)
+def slam(init, data, num_landmarks, motion_noise, measurement_noise):
+    N = len(data) + 1
     dim = 2 * (N + num_landmarks)
     
     Omega = np.zeros((dim, dim))
@@ -63,15 +62,16 @@ def slam(data, num_landmarks, motion_noise, measurement_noise):
     Omega[1][1] = 1.0
     
     Xi = np.zeros((dim, 1))
-    Xi[0][0] = data[0][1][0]
-    Xi[1][0] = data[0][1][1]
-    
-    for k in range(1, len(data)):
+    Xi[0][0] = init[0]
+    Xi[1][0] = init[1]
+
+    for k in range(len(data)):
         n = k * 2
         measurement = data[k][0]
-        motion      = data[k][1] - data[k-1][1] # need difference from prev
+        motion      = data[k][1]
         
         for i in range(len(measurement)):
+
             m = 2*(N + measurement[i][0])
             
             for b in range(2): # x and y
@@ -92,4 +92,4 @@ def slam(data, num_landmarks, motion_noise, measurement_noise):
         
     mu = np.matmul(np.linalg.inv(Omega), Xi) 
         
-    return mu # Make sure you return mu for grading!
+    return mu

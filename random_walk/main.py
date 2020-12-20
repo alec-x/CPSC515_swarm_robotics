@@ -7,9 +7,10 @@ from robot import robot
 from random import random
 import shutil
 
-num_frames     = 10000 # iterations to run for for non-video option
-video          = True # animate process
+
+video          = False # animate process
 video_interval = 10 # milliseconds/frame
+num_frames     = 10001 # iterations to run for for non-video option
 
 save           = False # Save intermediate occ_grids occasionally
 save_rate      = 1000 # frames/(occ_grid recording)
@@ -19,7 +20,7 @@ num_bots       = 1 # number of robots
 s_range        = 20 # range of wall detection
 
 rand_landmarks = False # Randomly scattered landmarks vs 4 at start
-num_landmarks = 10 # Only used if rand_landmarks = True
+num_landmarks = 100 # Only used if rand_landmarks = True
 
 obs_len        = 100 # obstacle dimensions
 obs_width      = 50
@@ -47,8 +48,8 @@ def logic_loop(i):
         # TODO: Refactor the abs, shouldnt need it
         np.savetxt(r'data/0_occ_grid_' + str(num_frames - i) + '.csv', occ_grid[0], delimiter=',')
         np.savetxt(r'data/1_occ_grid_' + str(num_frames - i) + '.csv', occ_grid[1], delimiter=',')
-    if i % int(num_frames/100) == 0:
-        print(f'progress: {num_frames - i}/{num_frames}', end="\r")
+    #if i % max(1,int(num_frames/100)) == 0:
+        #print(f'progress: {num_frames - i}/{num_frames}', end="\r")
 
 def animate_loop(i):
     ax.clear()
@@ -89,15 +90,18 @@ for r in obs_dims:
 
 
 
-# Initialize landmarks (indexed at 1 to match AIfR format)
+# Initialize landmarks
 landmarks = []
 if rand_landmarks:
-    [landmarks.append((i+1, random()*h_grid.shape[0], random()*h_grid.shape[1])) for i in range(num_landmarks)]
+    [landmarks.append((i, random()*h_grid.shape[0], random()*h_grid.shape[1])) for i in range(num_landmarks)]
 else:
-    [landmarks.append((i+1, random()*h_grid.shape[0], random()*h_grid.shape[1])) for i in range(4)]
+    landmarks.append((0, 150 + border_t, 20 + border_t))
+    landmarks.append((1, 150 + border_t, 80 + border_t))
+    landmarks.append((2, 400 + border_t, 20 + border_t))
+    landmarks.append((3, 400 + border_t, 80 + border_t))
 
 # Initialize robots
-robots = [robot(150 + border_t + random()*250, 50 + border_t, world=h_grid, occ_grid=occ_grid) for i in range(num_bots)]
+robots = [robot(150 + border_t + random()*250, 50 + border_t, world=h_grid, occ_grid=occ_grid, landmarks=landmarks) for i in range(num_bots)]
 
 print("Starting simulation")
 if(video):
@@ -113,10 +117,11 @@ else:
     while(i > 0):
         logic_loop(i)
         i -= 1
-    print("\n\nloading occupancy grid")
+    
 
 # Plot occupancy grid
 if(plot_occ):
+    print("\n\nloading occupancy grid")
     occ_grid = occ_grid[1] - occ_grid[0]
     occ_grid[occ_grid > 0] = 1
     occ_grid[occ_grid < 0] = 0
