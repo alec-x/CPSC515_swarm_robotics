@@ -32,9 +32,13 @@ class robot:
         self.step_len = step_len
         self.steps_remaining = 0
         self.localize_freq = localize_freq
+        self.localize_timer = localize_freq
         self.landmarks = landmarks
         self.world = world
         self.occ_grid = occ_grid
+        self.sensed_landmarks = deque(maxlen=pos_buffer_len)
+        initial_l = self.sense_landmarks()
+        [self.sensed_landmarks.append(initial_l) for _ in range(pos_buffer_len)]
 
     def rand(self):
         return float(random.random() * 2.0 - 1.0)
@@ -76,12 +80,12 @@ class robot:
     #
 
     def sense_landmarks(self):
+
         Z = []
         for i in range(len(self.landmarks)):
             dx = self.landmarks[i][0] - self.x_real + self.rand() * self.measurement_noise
             dy = self.landmarks[i][1] - self.y_real+ self.rand() * self.measurement_noise    
-            if self.sense_range < 0.0 or abs(dx) + abs(dy) <= self.sense_range:
-                Z.append([i, dx, dy])
+            Z.append([i, dx, dy])
         return Z
 
     def sense_proximity(self):
@@ -104,9 +108,19 @@ class robot:
     def update(self):
         try:
             # Sense
-            landmarks = self.sense_landmarks()
+            
             collided, prox = self.sense_proximity()
-
+            
+            # Occasionally perform graphslam
+            Z = self.sense_landmarks()
+            self.sensed_landmarks.append(Z) 
+            """
+            
+            if self.localize_timer == 0:
+                self.localize_timer = self.localize_freq
+            else:
+                self.localize_timer -= 1
+            """
             # Record
             x_lower = round(self.sensed_pos[-1][0]) - self.sense_range
             x_higher = round(self.sensed_pos[-1][0]) + self.sense_range + 1
