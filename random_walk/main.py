@@ -7,21 +7,26 @@ from robot import robot
 from random import random
 import shutil
 
-num_frames = 10000 # iterations to run for for non-video option
-video      = False # animate process
-save       = False # Save occ_grid every i frames
-record_at  = 1000 # record occ_grid at every i frame
-plot_occ   = True # Plot aggregated occupancy grid
+num_frames     = 10000 # iterations to run for for non-video option
+video          = True # animate process
+video_interval = 10 # milliseconds/frame
 
-num_bots   = 10 # number of robots
-s_range    = 20 # range of wall detection
+save           = False # Save intermediate occ_grids occasionally
+save_rate      = 1000 # frames/(occ_grid recording)
+plot_occ       = False # Plot aggregated occupancy grid
 
-obs_len    = 100 # obstacle dimensions
-obs_width  = 50
+num_bots       = 1 # number of robots
+s_range        = 20 # range of wall detection
 
-world_x    = 550 # occupancy grid
-world_y    = 600
-border_t   = 2*s_range
+rand_landmarks = False # Randomly scattered landmarks vs 4 at start
+num_landmarks = 10 # Only used if rand_landmarks = True
+
+obs_len        = 100 # obstacle dimensions
+obs_width      = 50
+
+world_x        = 550 # occupancy grid
+world_y        = 600
+border_t       = 2*s_range
 
 print("\nLoading with settings:")
 print(f"world size:     {world_x} x {world_y}")
@@ -38,7 +43,7 @@ if(save):
 def logic_loop(i):
     for bot in robots:
         bot.update()
-    if i % record_at == 0 and save:
+    if i % save_rate == 0 and save:
         # TODO: Refactor the abs, shouldnt need it
         np.savetxt(r'data/0_occ_grid_' + str(num_frames - i) + '.csv', occ_grid[0], delimiter=',')
         np.savetxt(r'data/1_occ_grid_' + str(num_frames - i) + '.csv', occ_grid[1], delimiter=',')
@@ -62,7 +67,7 @@ def animate_loop(i):
     """
     [ax.add_patch(rect) for rect in obstacles]
 
-    if i % record_at == 0 and save:
+    if i % save_rate == 0 and save:
         np.savetxt(r'data/0_occ_grid_' + str(i) + '.csv', occ_grid[0], delimiter=',')
         np.savetxt(r'data/1_occ_grid_' + str(i) + '.csv', occ_grid[1], delimiter=',')   
 
@@ -82,6 +87,15 @@ occ_grid = np.zeros((2, h_grid.shape[0], h_grid.shape[1]))
 for r in obs_dims:
     h_grid[r[0]:r[2], r[1]:r[3]] = 1 # votes for 0 or 1 by different robots/passes
 
+
+
+# Initialize landmarks (indexed at 1 to match AIfR format)
+landmarks = []
+if rand_landmarks:
+    [landmarks.append((i+1, random()*h_grid.shape[0], random()*h_grid.shape[1])) for i in range(num_landmarks)]
+else:
+    [landmarks.append((i+1, random()*h_grid.shape[0], random()*h_grid.shape[1])) for i in range(4)]
+
 # Initialize robots
 robots = [robot(150 + border_t + random()*250, 50 + border_t, world=h_grid, occ_grid=occ_grid) for i in range(num_bots)]
 
@@ -90,7 +104,7 @@ if(video):
     # create animation
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
-    animation = FuncAnimation(fig, func=animate_loop, interval=100)
+    animation = FuncAnimation(fig, func=animate_loop, interval=video_interval)
 
     # start animation
     plt.show()
