@@ -15,13 +15,14 @@ num_frames     = 10000 # iterations to run for for non-video option
 
 save           = False # Save intermediate occ_grids occasionally
 save_rate      = 1000 # frames/(occ_grid recording)
-plot_occ       = True # Plot aggregated occupancy grid
+plot_occ       = False # Plot aggregated occupancy grid
+save_plot      = True # Save occupancy grid
 
-num_bots       = 10 # number of robots
-s_range        = 15 # range of wall detection
+num_bots       = 20 # number of robots
+s_range        = 20 # range of wall detection
 motion_noise   = 0.1
 turn_noise     = 0.0
-measure_noise  = 0.1
+measure_noise  = 5.0
 
 rand_landmarks = False # Randomly scattered landmarks vs 4 at start
 num_landmarks = 100 # Only used if rand_landmarks = True
@@ -50,8 +51,8 @@ def logic_loop(i):
         bot.update()
     if i % save_rate == 0 and save:
         # TODO: Refactor the abs, shouldnt need it
-        np.savetxt(r'data/0_occ_grid_' + str(num_frames - i) + '.csv', occ_grid[0], delimiter=',')
-        np.savetxt(r'data/1_occ_grid_' + str(num_frames - i) + '.csv', occ_grid[1], delimiter=',')
+        np.savetxt(r'data/s_range_{}_timesteps_{}_0_occ_grid_'.format(s_range,num_frames) + str(num_frames - i) + '.csv', occ_grid[0], delimiter=',')
+        np.savetxt(r'data/s_range_{}_timesteps_{}_1_occ_grid_'.format(s_range,num_frames) + str(num_frames - i) + '.csv', occ_grid[1], delimiter=',')
     if i % max(1,int(num_frames/100)) == 0:
         print(f'progress: {num_frames - i}/{num_frames}', end="\r")
 
@@ -79,8 +80,8 @@ def animate_loop(i):
     [ax.add_patch(rect) for rect in obstacles]
 
     if i % save_rate == 0 and save:
-        np.savetxt(r'data/0_occ_grid_' + str(i) + '.csv', occ_grid[0], delimiter=',')
-        np.savetxt(r'data/1_occ_grid_' + str(i) + '.csv', occ_grid[1], delimiter=',')   
+        np.savetxt(r'data/s_range_{}_timesteps_{}_0_occ_grid_'.format(s_range,num_frames) + str(num_frames - i) + '.csv', occ_grid[0], delimiter=',')
+        np.savetxt(r'data/s_range_{}_timesteps_{}_1_occ_grid_'.format(s_range,num_frames) + str(num_frames - i) + '.csv', occ_grid[1], delimiter=',')   
 
 # Initialize obstacles
 obstacles = [] 
@@ -129,12 +130,16 @@ else:
         i -= 1
     
 
-# Plot occupancy grid
-if(plot_occ):
+if plot_occ or save_plot:
     print("\n\nloading occupancy grid")
     occ_grid = occ_grid[1] - occ_grid[0]
     occ_grid[occ_grid > 0] = 1
     occ_grid[occ_grid < 0] = 0
     plt.figure(figsize=(6,6))
     plt.pcolor(occ_grid[::-1])
-    plt.show()
+    plt.xticks([])
+    plt.yticks([])
+    plt.title("Sensing Range:{}, # Timesteps:{}, # Robots:{}".format(s_range, num_frames, num_bots))
+    # Plot occupancy grid
+    if plot_occ: plt.show()
+    if save_plot: plt.savefig("s_range_{}_timesteps_{}_bots{}".format(s_range, num_frames, num_bots))
