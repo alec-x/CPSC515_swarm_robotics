@@ -115,7 +115,7 @@ class robot:
             (self.x_real, self.y_real, self.heading_real, self.steps_remaining)
 
     def update(self):
-        #try:
+        try:
             # Sense
             
             collided, prox = self.sense_proximity()
@@ -164,5 +164,5 @@ class robot:
                 self.step()
                 self.steps_remaining -= 1
                 return True
-        #except:
-          #  pass # no error handling for broken robots
+        except:
+            pass # no error handling for broken robots
