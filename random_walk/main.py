@@ -7,17 +7,21 @@ from robot import robot
 from random import random
 import shutil
 
-
 video          = False # animate process
 video_interval = 10 # milliseconds/frame
-num_frames     = 10001 # iterations to run for for non-video option
+show_dead      = False # Show robot dead reckoning tracking (red)
+show_sensed    = False # Show robot sensed position (blue)
+num_frames     = 10000 # iterations to run for for non-video option
 
 save           = False # Save intermediate occ_grids occasionally
 save_rate      = 1000 # frames/(occ_grid recording)
-plot_occ       = False # Plot aggregated occupancy grid
+plot_occ       = True # Plot aggregated occupancy grid
 
-num_bots       = 1 # number of robots
-s_range        = 20 # range of wall detection
+num_bots       = 10 # number of robots
+s_range        = 15 # range of wall detection
+motion_noise   = 0.1
+turn_noise     = 0.0
+measure_noise  = 0.1
 
 rand_landmarks = False # Randomly scattered landmarks vs 4 at start
 num_landmarks = 100 # Only used if rand_landmarks = True
@@ -48,8 +52,8 @@ def logic_loop(i):
         # TODO: Refactor the abs, shouldnt need it
         np.savetxt(r'data/0_occ_grid_' + str(num_frames - i) + '.csv', occ_grid[0], delimiter=',')
         np.savetxt(r'data/1_occ_grid_' + str(num_frames - i) + '.csv', occ_grid[1], delimiter=',')
-    #if i % max(1,int(num_frames/100)) == 0:
-        #print(f'progress: {num_frames - i}/{num_frames}', end="\r")
+    if i % max(1,int(num_frames/100)) == 0:
+        print(f'progress: {num_frames - i}/{num_frames}', end="\r")
 
 def animate_loop(i):
     ax.clear()
@@ -61,11 +65,17 @@ def animate_loop(i):
     x_bots = [bot.x_real for bot in robots]
     y_bots = [bot.y_real for bot in robots]
     ax.plot(x_bots, y_bots, 'go')
-    """
-    x_bots_dead = [bot.x_sense for bot in robots]
-    y_bots_dead = [bot.y_sense for bot in robots]
-    ax.plot(x_bots_dead, y_bots_dead, 'ro')
-    """
+    
+    if show_dead:
+        x_bots_dead = [bot.x_dead for bot in robots]
+        y_bots_dead = [bot.y_dead for bot in robots]
+        ax.plot(x_bots_dead, y_bots_dead, 'ro')
+    
+    if show_sensed:
+        x_bots_sensed = [bot.x_sense for bot in robots]
+        y_bots_sensed = [bot.y_sense for bot in robots]
+        ax.plot(x_bots_sensed, y_bots_sensed, 'bo')
+
     [ax.add_patch(rect) for rect in obstacles]
 
     if i % save_rate == 0 and save:
